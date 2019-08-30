@@ -110,6 +110,6 @@ def clustering():
             if file_id == -1:
                 print('Error')
             else:
-                #insert_into_db(df, file_id)
+                insert_into_db(df, file_id)
                 print(df.shape, file_id)
             
