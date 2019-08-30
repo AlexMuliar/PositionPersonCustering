@@ -31,26 +31,21 @@ def get_dress_by_file_id(file_id):
             AND height > 49", connection)
     connection.close()
     df.dress = df.dress.map(lambda x: np.loads(x))
-    #print(df.head())
-    #print(df.dress[0].shape)
     return df
 
 def cluster(file_id):
-    #try:
-        start = dt.datetime.now()
-        df = get_dress_by_file_id(file_id)
-        if df.shape[0] == 0:
-            raise("No data") 
-        clf = PersonClustering(position_split_alpha=0.4, position_split_min_cluster_size=3, 
-                position_split_min_samples=1, time_stretching_degree=6, min_cluster_size_for_cheking_noise=5,
-                max_difference_between_person_samples=0.75, noise_filter_compress_n_components=2)
-        df = clf.fit_transform(df)
-        print(file_id, df.cluster.unique().shape)
-        print(f"time: {dt.datetime.now() - start}")
-        return df, file_id
-    #except Exception as ex:
-    #    print(ex)
-    #    return 0, 0
+    start = dt.datetime.now()
+    df = get_dress_by_file_id(file_id)
+    if df.shape[0] == 0:
+        return 0, -1
+    clf = PersonClustering(position_split_alpha=0.4, position_split_min_cluster_size=3, 
+            position_split_min_samples=1, time_stretching_degree=6, min_cluster_size_for_cheking_noise=5,
+            max_difference_between_person_samples=0.75, noise_filter_compress_n_components=2)
+    df = clf.fit_transform(df)
+    print(file_id, df.cluster.unique().shape)
+    print(f"time: {dt.datetime.now() - start}")
+    return df, file_id
+
 
 def insert_into_db(data, FILE_ID):
     global CLUSTER_ID
@@ -106,15 +101,15 @@ def insert_into_db(data, FILE_ID):
     connection.commit()
     connection.close()
 
-if __name__ == "__main__":
+def clustering():
     conn = get_conn()
+    files = pd.read_sql("SELECT id from video_files", conn).id.tolist()
     conn.close()
     with ProcessPoolExecutor() as executor:
-        print(files)
         for df, file_id in executor.map(cluster, files):
-            if file_id == 0:
+            if file_id == -1:
                 print('Error')
             else:
-                insert_into_db(df, file_id)
+                #insert_into_db(df, file_id)
                 print(df.shape, file_id)
             
